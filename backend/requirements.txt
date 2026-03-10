@@ -1,0 +1,9 @@
+Flask==3.1.0
+Flask-Cors==5.0.1
+Flask-Limiter==3.12
+Flask-SocketIO==5.5.1
+pandas==2.2.3
+python-dotenv==1.0.1
+SQLAlchemy==2.0.39
+eventlet==0.39.1
+requests==2.32.3

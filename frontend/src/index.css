@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #e2e8f0;
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 24%),
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 30%),
+    linear-gradient(180deg, #020617 0%, #0f172a 100%);
+  font-family: "Manrope", sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(56, 189, 248, 0.2);
+  border-radius: 1rem;
+}
+
+.grid-layout {
+  min-height: 400px;
+}
