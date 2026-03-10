@@ -8,7 +8,9 @@ load_dotenv(override=True)
 
 from database.db import init_db
 from extensions import limiter, socketio
+from routes.analysis_routes import analysis_bp
 from routes.dataset_routes import dataset_bp
+from routes.dashboard_routes import dashboard_bp
 from routes.query_routes import query_bp
 from routes.upload_routes import upload_bp
 from routes.websocket_routes import register_socket_events
@@ -27,6 +29,8 @@ def create_app():
 
     app.register_blueprint(query_bp)
     app.register_blueprint(dataset_bp)
+    app.register_blueprint(analysis_bp)
+    app.register_blueprint(dashboard_bp)
     app.register_blueprint(upload_bp)
     register_socket_events(socketio)
 

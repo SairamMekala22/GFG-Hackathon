@@ -1,8 +1,17 @@
 import { Maximize2, MessageSquarePlus, Minimize2, X } from "lucide-react";
 import { useState } from "react";
+import ChartEditorPanel from "./ChartEditorPanel";
 import ChartWidget from "./ChartWidget";
 
-function WidgetModal({ widget, annotations, onAddAnnotation, onClose, onChartTypeChange }) {
+function WidgetModal({
+  widget,
+  annotations,
+  onAddAnnotation,
+  onClose,
+  onChartTypeChange,
+  onEditChart,
+  editLoading
+}) {
   const [note, setNote] = useState("");
 
   if (!widget) {
@@ -50,6 +59,10 @@ function WidgetModal({ widget, annotations, onAddAnnotation, onClose, onChartTyp
         </div>
 
         <aside className="flex min-h-0 flex-col rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-4">
+          <ChartEditorPanel
+            onEdit={(editPrompt) => onEditChart?.(widget, editPrompt)}
+            loading={editLoading}
+          />
           <div className="mb-4 flex items-center gap-2 text-slate-100">
             <MessageSquarePlus size={18} className="text-signal" />
             <h3 className="font-display text-lg font-semibold">Annotations</h3>

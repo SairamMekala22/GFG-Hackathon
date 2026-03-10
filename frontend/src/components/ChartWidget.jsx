@@ -13,6 +13,7 @@ import {
   Scatter,
   ScatterChart,
   Tooltip,
+  ReferenceDot,
   XAxis,
   YAxis
 } from "recharts";
@@ -31,6 +32,7 @@ const PLOT_OPTIONS = [
 function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, expanded = false }) {
   const [hiddenKeys, setHiddenKeys] = useState([]);
   const { title, chartType, data, metadata, sourcePrompt } = widget;
+  const anomalies = metadata?.anomalies || [];
 
   const keys = useMemo(() => {
     const xAxis = metadata?.x_axis;
@@ -117,6 +119,16 @@ function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, ex
           />
           <Legend onClick={handleLegendClick} />
           {series}
+          {anomalies.map((anomaly) => (
+            <ReferenceDot
+              key={`${anomaly[metadata?.x_axis]}-${anomaly.value}`}
+              x={anomaly[metadata?.x_axis]}
+              y={anomaly.value}
+              r={7}
+              fill="#f97316"
+              stroke="#fff"
+            />
+          ))}
           {(chartType === "line" || chartType === "bar") && (
             <Brush
               dataKey={metadata?.x_axis}

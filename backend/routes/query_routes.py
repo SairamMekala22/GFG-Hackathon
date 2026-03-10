@@ -1,9 +1,11 @@
 from collections import defaultdict
 
+import pandas as pd
 from flask import Blueprint, jsonify, request
 from sqlalchemy import inspect
 
 from database.db import engine
+from services.anomaly_service import detect_anomalies
 from extensions import limiter
 from services.chart_selector import infer_chart_type
 from services.dataset_qa import answer_dataset_question
@@ -11,6 +13,7 @@ from services.followup_generator import generate_follow_up_prompts
 from services.insight_generator import generate_insight, generate_summary_cards
 from services.prompt_router import route_prompt
 from services.retry_engine import execute_with_retry
+from services.root_cause_service import analyze_root_causes
 from services.sql_generator import execute_sql, generate_sql
 from services.table_repair import repair_table_headers_if_needed
 
@@ -74,6 +77,11 @@ def build_response(prompt: str, session_id: str):
     insight = generate_insight(rows, prompt)
     summary_cards = generate_summary_cards(rows, prompt)
     follow_up_prompts = generate_follow_up_prompts(prompt, rows, active_table, context)
+    result_frame = pd.DataFrame(rows)
+    anomalies = detect_anomalies(result_frame, metric=metadata.get("y_axis"), time_column=metadata.get("x_axis"))
+    root_cause = {"root_causes": []}
+    if anomalies.get("anomalies") or any(token in prompt.lower() for token in ("why", "drop", "decline", "spike", "anomaly")):
+        root_cause = analyze_root_causes(load_active_dataset(active_table), prompt)
 
     conversation_state[session_id]["history"].append({"prompt": prompt, "sql": resolved_sql})
     return {
@@ -84,12 +92,18 @@ def build_response(prompt: str, session_id: str):
         "insight": insight,
         "summary_cards": summary_cards,
         "follow_up_prompts": follow_up_prompts,
+        "anomalies": anomalies.get("anomalies", []),
+        "root_cause": root_cause,
         "dataset": active_table,
         "title": prompt,
         "source_prompt": prompt,
         "replace_dashboard": False,
         "intent": "query",
     }
+
+
+def load_active_dataset(table_name: str):
+    return pd.read_sql_query(f"SELECT * FROM {table_name}", engine)
 
 
 @query_bp.post("/generate-dashboard")
