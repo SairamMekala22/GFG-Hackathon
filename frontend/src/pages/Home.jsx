@@ -14,6 +14,7 @@ function normalizeWidget(response, index = 0) {
   return {
     id,
     title: response.title || response.prompt || "Generated Chart",
+    sourcePrompt: response.sourcePrompt || response.source_prompt || response.prompt || response.title || "",
     chartType: response.chartType || response.chart_type,
     data: response.data || [],
     metadata: response.metadata || response.chart_metadata || {},

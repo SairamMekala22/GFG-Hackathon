@@ -57,6 +57,7 @@ def build_response(prompt: str, session_id: str):
             "follow_up_prompts": follow_up_prompts,
             "dataset": active_table,
             "title": f"Dataset overview: {active_table}",
+            "source_prompt": prompt,
             "replace_dashboard": False,
             "intent": "dataset_qa",
         }
@@ -85,6 +86,7 @@ def build_response(prompt: str, session_id: str):
         "follow_up_prompts": follow_up_prompts,
         "dataset": active_table,
         "title": prompt,
+        "source_prompt": prompt,
         "replace_dashboard": False,
         "intent": "query",
     }

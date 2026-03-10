@@ -16,7 +16,7 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { Expand } from "lucide-react";
+import { Expand, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const COLORS = ["#38bdf8", "#22c55e", "#f59e0b", "#f97316", "#a78bfa", "#fb7185"];
@@ -30,7 +30,7 @@ const PLOT_OPTIONS = [
 
 function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, expanded = false }) {
   const [hiddenKeys, setHiddenKeys] = useState([]);
-  const { title, chartType, data, metadata } = widget;
+  const { title, chartType, data, metadata, sourcePrompt } = widget;
 
   const keys = useMemo(() => {
     const xAxis = metadata?.x_axis;
@@ -200,6 +200,18 @@ function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, ex
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="group relative">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:bg-white/10"
+            >
+              <Info size={14} />
+            </button>
+            <div className="pointer-events-none absolute right-0 top-11 z-20 hidden w-72 rounded-2xl border border-white/10 bg-slate-950/95 p-4 text-left text-xs leading-6 text-slate-300 shadow-glow group-hover:block">
+              <p className="mb-2 uppercase tracking-[0.2em] text-slate-500">Generated From</p>
+              <p>{sourcePrompt || "Original prompt unavailable."}</p>
+            </div>
+          </div>
           <select
             value={chartType}
             onChange={(event) => onChartTypeChange?.(widget.id, event.target.value)}
