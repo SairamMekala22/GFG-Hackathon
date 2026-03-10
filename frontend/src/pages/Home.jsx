@@ -5,6 +5,7 @@ import FileUpload from "../components/FileUpload";
 import InsightPanel from "../components/InsightPanel";
 import LoadingSpinner from "../components/LoadingSpinner";
 import PromptInput from "../components/PromptInput";
+import WidgetModal from "../components/WidgetModal";
 import { followUp, generateDashboard, getDatasetProfile, uploadCsv } from "../services/api";
 import { useSocket } from "../hooks/useSocket";
 
@@ -31,6 +32,12 @@ function Home() {
   const [datasetProfile, setDatasetProfile] = useState(null);
   const [hasUploadedDataset, setHasUploadedDataset] = useState(false);
   const [summaryCards, setSummaryCards] = useState([]);
+  const [suggestedPrompts, setSuggestedPrompts] = useState([]);
+  const [prompt, setPrompt] = useState(
+    "Show monthly revenue trends for 2024 and highlight the best performing region"
+  );
+  const [expandedWidget, setExpandedWidget] = useState(null);
+  const [annotationsByWidget, setAnnotationsByWidget] = useState({});
   const [error, setError] = useState("");
   const [sessionId] = useState(() => crypto.randomUUID());
 
@@ -43,6 +50,9 @@ function Home() {
     }
     if (payload?.summary_cards) {
       setSummaryCards(payload.summary_cards);
+    }
+    if (payload?.follow_up_prompts) {
+      setSuggestedPrompts(payload.follow_up_prompts);
     }
   }, []);
 
@@ -72,9 +82,11 @@ function Home() {
       setWidgets(nextWidgets);
       setInsight(response.insight);
       setSummaryCards(response.summary_cards || []);
+      setSuggestedPrompts(response.follow_up_prompts || []);
       setSql(response.sql);
       setChartType(response.chart_type);
       setDataset(response.dataset || dataset);
+      setPrompt(prompt);
       if (hasUploadedDataset && response.dataset && response.dataset !== dataset) {
         const profile = await getDatasetProfile(sessionId);
         setDatasetProfile(profile);
@@ -84,7 +96,8 @@ function Home() {
         session_id: sessionId,
         widgets: nextWidgets,
         insight: response.insight,
-        summary_cards: response.summary_cards || []
+        summary_cards: response.summary_cards || [],
+        follow_up_prompts: response.follow_up_prompts || []
       });
     } catch (requestError) {
       setError(
@@ -108,6 +121,7 @@ function Home() {
       setSql("");
       setChartType("");
       setSummaryCards([]);
+      setSuggestedPrompts([]);
       setInsight(
         `Dataset ${response.table_name} uploaded successfully with ${response.row_count} rows, ${response.columns.length} columns, and ${response.encoding} encoding. Ask a question about this data next.`
       );
@@ -133,6 +147,24 @@ function Home() {
     socket?.emit("filter_change", { session_id: sessionId, widget_id: widgetId, range });
   };
 
+  const handleAddAnnotation = (widgetId, note) => {
+    setAnnotationsByWidget((current) => ({
+      ...current,
+      [widgetId]: [...(current[widgetId] || []), note]
+    }));
+  };
+
+  const handleChartTypeChange = (widgetId, nextType) => {
+    setWidgets((current) =>
+      current.map((widget) =>
+        widget.id === widgetId ? { ...widget, chartType: nextType } : widget
+      )
+    );
+    setExpandedWidget((current) =>
+      current && current.id === widgetId ? { ...current, chartType: nextType } : current
+    );
+  };
+
   return (
     <main className="min-h-screen px-4 py-8 text-slate-100 md:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -148,7 +180,13 @@ function Home() {
           </div>
         </header>
 
-        <PromptInput onSubmit={(prompt) => submitPrompt(prompt, widgets.length > 0)} loading={loading} />
+        <PromptInput
+          onSubmit={(nextPrompt) => submitPrompt(nextPrompt, widgets.length > 0)}
+          loading={loading}
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          suggestedPrompts={suggestedPrompts}
+        />
         <FileUpload onUpload={handleUpload} uploading={uploading} />
         {loading && <LoadingSpinner />}
         {hasUploadedDataset && <DatasetSummary profile={datasetProfile} />}
@@ -156,6 +194,8 @@ function Home() {
           widgets={widgets}
           onLayoutsChange={handleLayoutsChange}
           onFilterChange={handleFilterChange}
+          onMaximizeWidget={setExpandedWidget}
+          onChartTypeChange={handleChartTypeChange}
         />
         <InsightPanel
           insight={insight}
@@ -166,6 +206,13 @@ function Home() {
           summaryCards={summaryCards}
         />
       </div>
+      <WidgetModal
+        widget={expandedWidget}
+        annotations={expandedWidget ? annotationsByWidget[expandedWidget.id] || [] : []}
+        onAddAnnotation={handleAddAnnotation}
+        onChartTypeChange={handleChartTypeChange}
+        onClose={() => setExpandedWidget(null)}
+      />
     </main>
   );
 }

@@ -6,7 +6,7 @@ import "react-resizable/css/styles.css";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-function Dashboard({ widgets, onLayoutsChange, onFilterChange }) {
+function Dashboard({ widgets, onLayoutsChange, onFilterChange, onMaximizeWidget, onChartTypeChange }) {
   const exportToPdf = async () => {
     const element = document.getElementById("dashboard-export");
     if (!element) {
@@ -64,7 +64,12 @@ function Dashboard({ widgets, onLayoutsChange, onFilterChange }) {
           >
             {widgets.map((widget) => (
               <div key={widget.id}>
-                <ChartWidget widget={widget} onFilterChange={onFilterChange} />
+                <ChartWidget
+                  widget={widget}
+                  onFilterChange={onFilterChange}
+                  onMaximize={onMaximizeWidget}
+                  onChartTypeChange={onChartTypeChange}
+                />
               </div>
             ))}
           </ResponsiveGridLayout>

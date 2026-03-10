@@ -7,6 +7,7 @@ from database.db import engine
 from extensions import limiter
 from services.chart_selector import infer_chart_type
 from services.dataset_qa import answer_dataset_question
+from services.followup_generator import generate_follow_up_prompts
 from services.insight_generator import generate_insight, generate_summary_cards
 from services.prompt_router import route_prompt
 from services.retry_engine import execute_with_retry
@@ -44,6 +45,7 @@ def build_response(prompt: str, session_id: str):
     if intent == "dataset_qa":
         answer, profile = answer_dataset_question(engine, active_table, prompt)
         summary_cards = generate_summary_cards(profile["sample_rows"], prompt)
+        follow_up_prompts = generate_follow_up_prompts(prompt, profile["sample_rows"], active_table, context)
         conversation_state[session_id]["history"].append({"prompt": prompt, "sql": ""})
         return {
             "sql": "",
@@ -52,6 +54,7 @@ def build_response(prompt: str, session_id: str):
             "data": profile["sample_rows"],
             "insight": answer,
             "summary_cards": summary_cards,
+            "follow_up_prompts": follow_up_prompts,
             "dataset": active_table,
             "title": f"Dataset overview: {active_table}",
             "replace_dashboard": False,
@@ -69,6 +72,7 @@ def build_response(prompt: str, session_id: str):
     metadata = infer_chart_type(rows)
     insight = generate_insight(rows, prompt)
     summary_cards = generate_summary_cards(rows, prompt)
+    follow_up_prompts = generate_follow_up_prompts(prompt, rows, active_table, context)
 
     conversation_state[session_id]["history"].append({"prompt": prompt, "sql": resolved_sql})
     return {
@@ -78,6 +82,7 @@ def build_response(prompt: str, session_id: str):
         "data": rows,
         "insight": insight,
         "summary_cards": summary_cards,
+        "follow_up_prompts": follow_up_prompts,
         "dataset": active_table,
         "title": prompt,
         "replace_dashboard": False,

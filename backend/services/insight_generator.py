@@ -1,6 +1,16 @@
-import json
-
-from services.gemini_service import gemini_service
+def choose_primary_metric(sample: dict) -> str:
+    numeric_keys = [key for key, value in sample.items() if isinstance(value, (int, float))]
+    preferred = next(
+        (
+            key for key in numeric_keys
+            if any(token in key.lower() for token in ("revenue", "sales", "conversion", "lead", "click", "impression", "roi", "score", "cost", "customer"))
+        ),
+        None,
+    )
+    if preferred:
+        return preferred
+    non_id = [key for key in numeric_keys if key.lower() not in {"id", "index"}]
+    return non_id[0] if non_id else (numeric_keys[0] if numeric_keys else "")
 
 
 def local_insight(rows, chart_metadata):
@@ -8,43 +18,35 @@ def local_insight(rows, chart_metadata):
         return "No records were returned for this query, so there is no business insight to summarize."
 
     x_axis = chart_metadata.get("x_axis")
-    y_axis = chart_metadata.get("y_axis")
+    y_axis = chart_metadata.get("y_axis") or choose_primary_metric(rows[0])
 
     if y_axis and all(isinstance(row.get(y_axis), (int, float)) for row in rows):
-        values = [row[y_axis] for row in rows]
         peak = max(rows, key=lambda row: row[y_axis])
         trough = min(rows, key=lambda row: row[y_axis])
+        if x_axis and any(token in x_axis.lower() for token in ("date", "month", "time", "year")) and len(rows) > 1:
+            first = rows[0]
+            last = rows[-1]
+            change = last[y_axis] - first[y_axis]
+            direction = "increased" if change >= 0 else "decreased"
+            pct = abs(change / first[y_axis] * 100) if first[y_axis] else 0
+            return (
+                f"{y_axis.replace('_', ' ').title()} {direction} by {pct:.1f}% from {first.get(x_axis)} to {last.get(x_axis)}. "
+                f"The peak occurs at {peak.get(x_axis, 'the strongest point')} with {format_metric_value(peak[y_axis])}, while the low is {format_metric_value(trough[y_axis])}."
+            )
         return (
-            f"{y_axis.title()} ranges from {trough[y_axis]:,.0f} to {peak[y_axis]:,.0f}. "
-            f"The strongest result appears at {peak.get(x_axis, 'the leading segment')}, while "
-            f"the weakest result appears at {trough.get(x_axis, 'the trailing segment')}."
+            f"{y_axis.replace('_', ' ').title()} ranges from {format_metric_value(trough[y_axis])} to {format_metric_value(peak[y_axis])}. "
+            f"The best-performing segment is {peak.get(x_axis, 'the leading segment')}, while the weakest is {trough.get(x_axis, 'the trailing segment')}."
         )
 
     return "The returned dataset is ready for exploration. Use follow-up prompts to refine the breakdown or isolate a segment."
 
 
 def generate_insight(rows, user_prompt: str):
-    chart_data = json.dumps(rows[:30], default=str)
-    if not gemini_service.is_configured():
-        metadata = {"x_axis": next(iter(rows[0].keys()), ""), "y_axis": list(rows[0].keys())[-1] if rows else ""}
-        return local_insight(rows, metadata)
-
-    prompt = f"""
-You are a business analyst.
-
-User prompt:
-{user_prompt}
-
-Data:
-{chart_data}
-
-Generate a 2-3 sentence executive summary highlighting trends, anomalies, or key insights.
-"""
-    try:
-        return gemini_service.generate_text(prompt)
-    except Exception:  # noqa: BLE001
-        metadata = {"x_axis": next(iter(rows[0].keys()), ""), "y_axis": list(rows[0].keys())[-1] if rows else ""}
-        return local_insight(rows, metadata)
+    metadata = {
+        "x_axis": next((key for key, value in (rows[0] if rows else {}).items() if not isinstance(value, (int, float))), ""),
+        "y_axis": choose_primary_metric(rows[0]) if rows else "",
+    }
+    return local_insight(rows, metadata)
 
 
 def format_metric_value(value):
@@ -69,7 +71,7 @@ def local_summary_cards(rows, user_prompt: str):
     cards = []
 
     if numeric_keys:
-        primary_metric = numeric_keys[0]
+        primary_metric = choose_primary_metric(sample)
         total = sum(float(row.get(primary_metric, 0) or 0) for row in rows)
         cards.append(
             {
@@ -80,19 +82,20 @@ def local_summary_cards(rows, user_prompt: str):
         )
 
         if dimension_keys:
-            dimension = dimension_keys[0]
+            dimension = next((key for key in dimension_keys if key.lower() not in {"date"}), dimension_keys[0])
             leader = max(rows, key=lambda row: float(row.get(primary_metric, 0) or 0))
-            trailer = min(rows, key=lambda row: float(row.get(primary_metric, 0) or 0))
+            non_null_rows = [row for row in rows if row.get(dimension) not in (None, "", "None")]
+            trailer = min(non_null_rows or rows, key=lambda row: float(row.get(primary_metric, 0) or 0))
             cards.append(
                 {
-                    "title": f"Top {dimension.replace('_', ' ')}",
+                    "title": "Best case",
                     "value": str(leader.get(dimension, "N/A")),
                     "summary": f"Led with {format_metric_value(leader.get(primary_metric, 0))} {primary_metric.replace('_', ' ')}.",
                 }
             )
             cards.append(
                 {
-                    "title": f"Lowest {dimension.replace('_', ' ')}",
+                    "title": "Worst case",
                     "value": str(trailer.get(dimension, "N/A")),
                     "summary": f"Trailing segment at {format_metric_value(trailer.get(primary_metric, 0))}.",
                 }
@@ -125,51 +128,4 @@ def local_summary_cards(rows, user_prompt: str):
 
 
 def generate_summary_cards(rows, user_prompt: str):
-    if not rows:
-        return []
-
-    if not gemini_service.is_configured():
-        return local_summary_cards(rows, user_prompt)
-
-    prompt = f"""
-You are an executive analytics assistant.
-
-User prompt:
-{user_prompt}
-
-Data:
-{json.dumps(rows[:40], default=str)}
-
-Create 3 to 5 relevant summary cards for this result.
-Return JSON only in this exact format:
-{{
-  "cards": [
-    {{
-      "title": "short label",
-      "value": "headline number or takeaway",
-      "summary": "one short business-relevant sentence"
-    }}
-  ]
-}}
-
-Requirements:
-- Make the cards specific to the actual result data.
-- Prefer totals, leaders, growth, changes, coverage, ratios, or anomalies when supported.
-- Avoid generic filler.
-"""
-    try:
-        raw = gemini_service.generate_json(prompt)
-        cards = raw.get("cards", [])
-        normalized_cards = []
-        for card in cards:
-          if card.get("title") and card.get("value") and card.get("summary"):
-              normalized_cards.append(
-                  {
-                      "title": str(card["title"]).strip()[:80],
-                      "value": str(card["value"]).strip()[:160],
-                      "summary": str(card["summary"]).strip()[:220],
-                  }
-              )
-        return normalized_cards[:5] or local_summary_cards(rows, user_prompt)
-    except Exception:  # noqa: BLE001
-        return local_summary_cards(rows, user_prompt)
+    return local_summary_cards(rows, user_prompt)

@@ -16,11 +16,19 @@ import {
   XAxis,
   YAxis
 } from "recharts";
+import { Expand } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const COLORS = ["#38bdf8", "#22c55e", "#f59e0b", "#f97316", "#a78bfa", "#fb7185"];
+const PLOT_OPTIONS = [
+  { value: "line", label: "Line" },
+  { value: "bar", label: "Bar" },
+  { value: "pie", label: "Pie" },
+  { value: "scatter", label: "Scatter" },
+  { value: "table", label: "Table" }
+];
 
-function ChartWidget({ widget, onFilterChange }) {
+function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, expanded = false }) {
   const [hiddenKeys, setHiddenKeys] = useState([]);
   const { title, chartType, data, metadata } = widget;
 
@@ -30,6 +38,22 @@ function ChartWidget({ widget, onFilterChange }) {
   }, [data, metadata]);
 
   const visibleKeys = keys.filter((key) => !hiddenKeys.includes(key));
+  const supportedPlotOptions = useMemo(() => {
+    const hasNumeric = keys.length > 0;
+    const hasXAxis = Boolean(metadata?.x_axis);
+    return PLOT_OPTIONS.filter((option) => {
+      if (option.value === "pie") {
+        return hasNumeric;
+      }
+      if (option.value === "scatter") {
+        return keys.length > 1;
+      }
+      if (option.value === "line" || option.value === "bar") {
+        return hasNumeric && hasXAxis;
+      }
+      return true;
+    });
+  }, [keys, metadata]);
 
   const handleLegendClick = (entry) => {
     const key = entry.dataKey;
@@ -175,8 +199,31 @@ function ChartWidget({ widget, onFilterChange }) {
             {chartType} visualization
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={chartType}
+            onChange={(event) => onChartTypeChange?.(widget.id, event.target.value)}
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 outline-none"
+          >
+            {supportedPlotOptions.map((option) => (
+              <option key={option.value} value={option.value} className="bg-slate-950">
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {!expanded && chartType !== "table" && (
+            <button
+              type="button"
+              onClick={() => onMaximize?.(widget)}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-200 transition hover:bg-white/10"
+            >
+              <Expand size={14} />
+              Maximize
+            </button>
+          )}
+        </div>
       </div>
-      <div className="min-h-[260px] flex-1">
+      <div className={expanded ? "min-h-[520px] flex-1" : "min-h-[260px] flex-1"}>
         {chartType === "table"
           ? renderTable()
           : chartType === "pie"

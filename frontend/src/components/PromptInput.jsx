@@ -1,5 +1,4 @@
 import { SendHorizontal } from "lucide-react";
-import { useState } from "react";
 import VoiceInput from "./VoiceInput";
 
 const EXAMPLES = [
@@ -8,8 +7,8 @@ const EXAMPLES = [
   "Which region had the highest growth this quarter?"
 ];
 
-function PromptInput({ onSubmit, loading }) {
-  const [prompt, setPrompt] = useState(EXAMPLES[0]);
+function PromptInput({ onSubmit, loading, prompt, onPromptChange, suggestedPrompts = [] }) {
+  const prompts = suggestedPrompts.length ? suggestedPrompts : EXAMPLES;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -31,23 +30,23 @@ function PromptInput({ onSubmit, loading }) {
             produce an AI summary.
           </p>
         </div>
-        <VoiceInput onTranscript={setPrompt} />
+        <VoiceInput onTranscript={onPromptChange} />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <textarea
           value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
+          onChange={(event) => onPromptChange(event.target.value)}
           rows={4}
           placeholder="Show revenue by region and flag top growth areas."
           className="w-full rounded-3xl border border-white/10 bg-slate-950/70 px-4 py-4 text-sm text-slate-100 outline-none ring-0 placeholder:text-slate-500 focus:border-signal"
         />
         <div className="flex flex-wrap gap-2">
-          {EXAMPLES.map((example) => (
+          {prompts.map((example) => (
             <button
               key={example}
               type="button"
-              onClick={() => setPrompt(example)}
+              onClick={() => onPromptChange(example)}
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:border-signal/60 hover:text-white"
             >
               {example}
