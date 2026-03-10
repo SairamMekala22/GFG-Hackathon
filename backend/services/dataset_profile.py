@@ -1,7 +1,10 @@
 from sqlalchemy import inspect, text
 
+from services.table_repair import repair_table_headers_if_needed
+
 
 def get_dataset_profile(engine, table_name: str) -> dict:
+    repair_table_headers_if_needed(engine, table_name)
     inspector = inspect(engine)
     columns = inspector.get_columns(table_name)
     column_names = [column["name"] for column in columns]

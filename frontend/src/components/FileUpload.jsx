@@ -19,9 +19,9 @@ function FileUpload({ onUpload, uploading }) {
     <div className="rounded-3xl border border-dashed border-white/15 bg-white/5 p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-slate-100">CSV Upload</p>
+          <p className="text-sm font-semibold text-slate-100">Dataset Upload</p>
           <p className="text-xs text-slate-400">
-            Add a dataset and the backend will auto-register it in SQLite.
+            Add a CSV or Excel file and the backend will auto-register it in SQLite.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -32,7 +32,7 @@ function FileUpload({ onUpload, uploading }) {
             className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Upload size={16} />
-            {uploading ? "Uploading..." : "Upload CSV"}
+            {uploading ? "Uploading..." : "Upload File"}
           </button>
           {fileName && <span className="text-xs text-slate-400">{fileName}</span>}
         </div>
@@ -40,7 +40,7 @@ function FileUpload({ onUpload, uploading }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".csv"
+        accept=".csv,.xlsx,.xls"
         className="hidden"
         onChange={handleChange}
       />

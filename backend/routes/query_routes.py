@@ -11,6 +11,7 @@ from services.insight_generator import generate_insight, generate_summary_cards
 from services.prompt_router import route_prompt
 from services.retry_engine import execute_with_retry
 from services.sql_generator import execute_sql, generate_sql
+from services.table_repair import repair_table_headers_if_needed
 
 query_bp = Blueprint("query", __name__)
 
@@ -18,6 +19,9 @@ conversation_state = defaultdict(lambda: {"history": [], "active_table": "sales_
 
 
 def get_schema():
+    for table_name in inspect(engine).get_table_names():
+        repair_table_headers_if_needed(engine, table_name)
+
     inspector = inspect(engine)
     schema = {}
     for table_name in inspector.get_table_names():

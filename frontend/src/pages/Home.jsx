@@ -29,6 +29,7 @@ function Home() {
   const [chartType, setChartType] = useState("");
   const [dataset, setDataset] = useState("sales_data");
   const [datasetProfile, setDatasetProfile] = useState(null);
+  const [hasUploadedDataset, setHasUploadedDataset] = useState(false);
   const [summaryCards, setSummaryCards] = useState([]);
   const [error, setError] = useState("");
   const [sessionId] = useState(() => crypto.randomUUID());
@@ -55,20 +56,6 @@ function Home() {
     socket.emit("join_session", { session_id: sessionId });
   }, [sessionId, socket]);
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const profile = await getDatasetProfile(sessionId);
-        setDatasetProfile(profile);
-        setDataset(profile.table_name);
-      } catch {
-        // Ignore initial profile load failures; the app can still function.
-      }
-    };
-
-    loadProfile();
-  }, [sessionId]);
-
   const submitPrompt = async (prompt, isFollowUp = false) => {
     setLoading(true);
     setError("");
@@ -88,7 +75,7 @@ function Home() {
       setSql(response.sql);
       setChartType(response.chart_type);
       setDataset(response.dataset || dataset);
-      if (response.dataset && response.dataset !== dataset) {
+      if (hasUploadedDataset && response.dataset && response.dataset !== dataset) {
         const profile = await getDatasetProfile(sessionId);
         setDatasetProfile(profile);
       }
@@ -116,6 +103,7 @@ function Home() {
       const response = await uploadCsv(file, sessionId);
       setDataset(response.table_name);
       setDatasetProfile(response.profile || null);
+      setHasUploadedDataset(true);
       setWidgets([]);
       setSql("");
       setChartType("");
@@ -124,6 +112,8 @@ function Home() {
         `Dataset ${response.table_name} uploaded successfully with ${response.row_count} rows, ${response.columns.length} columns, and ${response.encoding} encoding. Ask a question about this data next.`
       );
     } catch (uploadError) {
+      setDatasetProfile(null);
+      setHasUploadedDataset(false);
       setError(uploadError?.response?.data?.error || "CSV upload failed.");
     } finally {
       setUploading(false);
@@ -161,7 +151,7 @@ function Home() {
         <PromptInput onSubmit={(prompt) => submitPrompt(prompt, widgets.length > 0)} loading={loading} />
         <FileUpload onUpload={handleUpload} uploading={uploading} />
         {loading && <LoadingSpinner />}
-        <DatasetSummary profile={datasetProfile} />
+        {hasUploadedDataset && <DatasetSummary profile={datasetProfile} />}
         <Dashboard
           widgets={widgets}
           onLayoutsChange={handleLayoutsChange}
