@@ -57,6 +57,16 @@ export const getRootCause = async (payload) => {
   return response.data;
 };
 
+export const explainChart = async (payload) => {
+  const response = await api.post("/analysis/explain-chart", payload);
+  return response.data;
+};
+
+export const getRecommendations = async (payload) => {
+  const response = await api.post("/analysis/recommendations", payload);
+  return response.data;
+};
+
 export const simulateScenario = async (payload) => {
   const response = await api.post("/analysis/simulate", payload);
   return response.data;

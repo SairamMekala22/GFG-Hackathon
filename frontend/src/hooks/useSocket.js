@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5050";
 
-export function useSocket(sessionId, onDashboardEvent) {
+export function useSocket(sessionId, onDashboardEvent, onAnalysisEvent) {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -20,13 +20,14 @@ export function useSocket(sessionId, onDashboardEvent) {
     nextSocket.on("connect", () => setIsConnected(true));
     nextSocket.on("disconnect", () => setIsConnected(false));
     nextSocket.on("dashboard_updated", onDashboardEvent);
+    nextSocket.on("analysis_update", onAnalysisEvent);
 
     setSocket(nextSocket);
 
     return () => {
       nextSocket.disconnect();
     };
-  }, [sessionId, onDashboardEvent]);
+  }, [sessionId, onDashboardEvent, onAnalysisEvent]);
 
   return { socket, isConnected };
 }

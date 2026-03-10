@@ -1,4 +1,5 @@
 import { Download } from "lucide-react";
+import ExecutiveReportButton from "./ExecutiveReportButton";
 import { WidthProvider, Responsive } from "react-grid-layout";
 import ChartWidget from "./ChartWidget";
 import "react-grid-layout/css/styles.css";
@@ -6,7 +7,20 @@ import "react-resizable/css/styles.css";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-function Dashboard({ widgets, onLayoutsChange, onFilterChange, onMaximizeWidget, onChartTypeChange }) {
+function Dashboard({
+  widgets,
+  onLayoutsChange,
+  onFilterChange,
+  onMaximizeWidget,
+  onChartTypeChange,
+  onExplainChart,
+  onGenerateReport,
+  reportLoading,
+  reportPreview,
+  onCloseReport,
+  onDownloadReportPdf,
+  onDownloadReportMarkdown
+}) {
   const exportToPdf = async () => {
     const element = document.getElementById("dashboard-export");
     if (!element) {
@@ -34,14 +48,24 @@ function Dashboard({ widgets, onLayoutsChange, onFilterChange, onMaximizeWidget,
             Drag, resize, export, and collaborate in real time.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={exportToPdf}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-white/20"
-        >
-          <Download size={16} />
-          Export Dashboard
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <ExecutiveReportButton
+            loading={reportLoading}
+            report={reportPreview}
+            onGenerate={onGenerateReport}
+            onClose={onCloseReport}
+            onDownloadPdf={onDownloadReportPdf}
+            onDownloadMarkdown={onDownloadReportMarkdown}
+          />
+          <button
+            type="button"
+            onClick={exportToPdf}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-white/20"
+          >
+            <Download size={16} />
+            Export Dashboard
+          </button>
+        </div>
       </div>
 
       {widgets.length === 0 ? (
@@ -69,6 +93,7 @@ function Dashboard({ widgets, onLayoutsChange, onFilterChange, onMaximizeWidget,
                   onFilterChange={onFilterChange}
                   onMaximize={onMaximizeWidget}
                   onChartTypeChange={onChartTypeChange}
+                  onExplainChart={onExplainChart}
                 />
               </div>
             ))}

@@ -17,8 +17,9 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { Expand, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Expand, Info } from "lucide-react";
 import { useMemo, useState } from "react";
+import ExplainChartButton from "./ExplainChartButton";
 
 const COLORS = ["#38bdf8", "#22c55e", "#f59e0b", "#f97316", "#a78bfa", "#fb7185"];
 const PLOT_OPTIONS = [
@@ -29,9 +30,25 @@ const PLOT_OPTIONS = [
   { value: "table", label: "Table" }
 ];
 
-function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, expanded = false }) {
+function ChartWidget({
+  widget,
+  onFilterChange,
+  onMaximize,
+  onChartTypeChange,
+  onExplainChart,
+  expanded = false
+}) {
   const [hiddenKeys, setHiddenKeys] = useState([]);
-  const { title, chartType, data, metadata, sourcePrompt } = widget;
+  const {
+    title,
+    chartType,
+    data,
+    metadata,
+    sourcePrompt,
+    explanation,
+    explanationLoading,
+    analysisLoading
+  } = widget;
   const anomalies = metadata?.anomalies || [];
 
   const keys = useMemo(() => {
@@ -210,6 +227,9 @@ function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, ex
           <p className="text-xs uppercase tracking-[0.24em] text-slate-500">
             {chartType} visualization
           </p>
+          {analysisLoading && (
+            <p className="mt-2 text-xs text-sky-300">Loading deeper analysis...</p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="group relative">
@@ -235,6 +255,10 @@ function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, ex
               </option>
             ))}
           </select>
+          <ExplainChartButton
+            loading={explanationLoading}
+            onClick={() => onExplainChart?.(widget)}
+          />
           {!expanded && chartType !== "table" && (
             <button
               type="button"
@@ -254,6 +278,21 @@ function ChartWidget({ widget, onFilterChange, onMaximize, onChartTypeChange, ex
             ? renderPie()
             : renderCartesianChart()}
       </div>
+      {!!explanation?.length && (
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-500">
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            Chart Explanation
+          </div>
+          <div className="space-y-2">
+            {explanation.map((item, index) => (
+              <p key={`${widget.id}-explanation-${index}`} className="text-sm leading-6 text-slate-200">
+                {item}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
