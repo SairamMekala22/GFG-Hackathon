@@ -3,8 +3,9 @@ from flask import Blueprint, jsonify, request
 from database.db import engine
 from extensions import limiter
 from routes.query_routes import conversation_state
-from services.dataset_profile import get_dataset_profile
+from utils.cache_manager import get_or_compute_dataset_profile
 from utils.csv_loader import load_csv_to_sqlite
+from workers.async_analysis_worker import warm_dataset_cache_async
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -21,7 +22,8 @@ def upload_csv_route():
     try:
         result = load_csv_to_sqlite(file)
         conversation_state[session_id]["active_table"] = result["table_name"]
-        result["profile"] = get_dataset_profile(engine, result["table_name"])
+        result["profile"] = get_or_compute_dataset_profile(engine, result["table_name"])
+        warm_dataset_cache_async(result["table_name"])
         return jsonify(result)
     except Exception as error:  # noqa: BLE001
         return jsonify({"error": str(error)}), 400

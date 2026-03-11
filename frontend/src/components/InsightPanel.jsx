@@ -1,7 +1,7 @@
 import { Sparkles } from "lucide-react";
 import SummaryCards from "./SummaryCards";
 
-function InsightPanel({ insight, sql, chartType, dataset, error, summaryCards }) {
+function InsightPanel({ insight, sql, chartType, dataset, error, summaryCards, loading }) {
   return (
     <div className="space-y-4">
       <SummaryCards cards={summaryCards} />
@@ -22,6 +22,11 @@ function InsightPanel({ insight, sql, chartType, dataset, error, summaryCards })
             <p className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-200">
               {insight || "Run a prompt to see an executive summary."}
             </p>
+            {loading && (
+              <div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4 text-sm text-sky-100">
+                Loading deeper insights, root-cause analysis, and correlations...
+              </div>
+            )}
             <div className="grid gap-3 text-xs text-slate-400 md:grid-cols-3">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
                 <p className="mb-1 text-slate-500">Visualization</p>

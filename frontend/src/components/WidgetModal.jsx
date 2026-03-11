@@ -9,6 +9,7 @@ function WidgetModal({
   onAddAnnotation,
   onClose,
   onChartTypeChange,
+  onExplainChart,
   onEditChart,
   editLoading
 }) {
@@ -54,6 +55,7 @@ function WidgetModal({
               widget={widget}
               expanded
               onChartTypeChange={onChartTypeChange}
+              onExplainChart={onExplainChart}
             />
           </div>
         </div>

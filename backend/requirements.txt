@@ -8,3 +8,5 @@ python-dotenv==1.0.1
 SQLAlchemy==2.0.39
 eventlet==0.39.1
 requests==2.32.3
+reportlab==4.4.1
+chardet<6

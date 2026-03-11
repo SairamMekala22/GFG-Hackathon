@@ -1,5 +1,5 @@
-function DecisionIntelPanel({ rootCause, correlations, simulation }) {
-  if (!rootCause && !correlations?.length && !simulation) {
+function DecisionIntelPanel({ rootCause, correlations, simulation, loading }) {
+  if (!rootCause && !correlations?.length && !simulation && !loading) {
     return null;
   }
 
@@ -13,6 +13,11 @@ function DecisionIntelPanel({ rootCause, correlations, simulation }) {
           </p>
         )}
         <div className="mt-4 space-y-3">
+          {loading && !rootCause?.root_causes?.length && (
+            <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm text-slate-400">
+              Loading root-cause analysis...
+            </div>
+          )}
           {rootCause?.root_causes?.length ? (
             rootCause.root_causes.map((cause) => (
               <div key={cause} className="rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm text-slate-200">
@@ -28,6 +33,11 @@ function DecisionIntelPanel({ rootCause, correlations, simulation }) {
       <article className="rounded-[2rem] border border-white/10 bg-white/5 p-5 shadow-glow">
         <h3 className="font-display text-lg font-semibold text-white">Correlations</h3>
         <div className="mt-4 space-y-3">
+          {loading && !correlations?.length && (
+            <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm text-slate-400">
+              Loading correlation discovery...
+            </div>
+          )}
           {correlations?.length ? (
             correlations.map((item) => (
               <div key={`${item.metric_a}-${item.metric_b}`} className="rounded-2xl border border-white/10 bg-slate-950/70 p-3 text-sm text-slate-200">
