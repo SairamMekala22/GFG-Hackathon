@@ -45,6 +45,20 @@ function normalizeWidget(response, index = 0) {
   };
 }
 
+function withExpandedExplanationLayout(widget, explanation) {
+  const minimumHeight = widget.chartType === "table" ? 12 : 11;
+  const extraRows = Math.min(Math.max((explanation?.length || 0) - 2, 0), 2);
+  return {
+    ...widget,
+    explanation,
+    explanationLoading: false,
+    layout: {
+      ...widget.layout,
+      h: Math.max(widget.layout?.h || 8, minimumHeight + extraRows)
+    }
+  };
+}
+
 function Home() {
   const [widgets, setWidgets] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -67,9 +81,7 @@ function Home() {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportPreview, setReportPreview] = useState(null);
   const [analysisPending, setAnalysisPending] = useState(false);
-  const [prompt, setPrompt] = useState(
-    "Show monthly revenue trends for 2024 and highlight the best performing region"
-  );
+  const [prompt, setPrompt] = useState("");
   const [expandedWidget, setExpandedWidget] = useState(null);
   const [annotationsByWidget, setAnnotationsByWidget] = useState({});
   const [error, setError] = useState("");
@@ -302,34 +314,32 @@ function Home() {
       setWidgets((current) =>
         current.map((item) =>
           item.id === widget.id
-            ? { ...item, explanation: response.explanation || [], explanationLoading: false }
+            ? withExpandedExplanationLayout(item, response.explanation || [])
             : item
         )
       );
       setExpandedWidget((current) =>
         current && current.id === widget.id
-          ? { ...current, explanation: response.explanation || [], explanationLoading: false }
+          ? withExpandedExplanationLayout(current, response.explanation || [])
           : current
       );
     } catch (_error) {
       setWidgets((current) =>
         current.map((item) =>
           item.id === widget.id
-            ? {
-                ...item,
-                explanation: ["The system could not generate a chart explanation right now."],
-                explanationLoading: false
-              }
+            ? withExpandedExplanationLayout(
+                item,
+                ["The system could not generate a chart explanation right now."]
+              )
             : item
         )
       );
       setExpandedWidget((current) =>
         current && current.id === widget.id
-          ? {
-              ...current,
-              explanation: ["The system could not generate a chart explanation right now."],
-              explanationLoading: false
-            }
+          ? withExpandedExplanationLayout(
+              current,
+              ["The system could not generate a chart explanation right now."]
+            )
           : current
       );
     }
